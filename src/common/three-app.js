@@ -54,9 +54,10 @@ const threeApp = () => {
     clock: undefined,
     animationMixer: undefined,
     cubeSize: 3,
-    cubeSizeChanged: true,
+    cubeSizeChanged: false,
     animationSpeed: 750,
-    axesEnabled: false
+    axesEnabled: false,
+    scrambleEnabled: false,
   }
 
   const SETTINGS_CHANGED_EVENT_NAME = 'settings-changed'
@@ -75,7 +76,8 @@ const threeApp = () => {
       animationSpeed: globals.animationSpeed,
       autoRotate: globals.controls.autoRotate,
       autoRotateSpeed: globals.controls.autoRotateSpeed,
-      axesEnabled: globals.axesEnabled
+      axesEnabled: globals.axesEnabled,
+      scrambleEnabled: globals.scrambleEnabled,
     }
   }
 
@@ -235,7 +237,8 @@ const threeApp = () => {
     const move = moves[nextMoveIndex]
 
     if (!move) {
-      return setTimeout(scramble, AFTER_DELAY)
+      setScrambleEnabled(false)
+      return null
     }
 
     const pieces = L.getPieces(globals.cube, move.coordsList)
@@ -264,6 +267,32 @@ const threeApp = () => {
     clipAction.play()
   }
 
+  /*const makeMove = move => {
+    const pieces = L.getPieces(globals.cube, move.coordsList)
+    const uiPieces = pieces.map(findUiPiece)
+    movePiecesBetweenGroups(uiPieces, globals.puzzleGroup, globals.animationGroup)
+
+    const onFinished = () => {
+      globals.animationMixer.removeEventListener("finished", onFinished)
+      movePiecesBetweenGroups(uiPieces, globals.animationGroup, globals.puzzleGroup)
+      globals.cube = move.makeMove(globals.cube)
+      const rotationMatrix3 = move.rotationMatrix3
+      const rotationMatrix4 = makeRotationMatrix4(rotationMatrix3)
+      for (const uiPiece of uiPieces) {
+        uiPiece.applyMatrix4(rotationMatrix4)
+      }
+    }
+
+    globals.animationMixer.addEventListener("finished", onFinished)
+
+    const animationClip = createAnimationClip(move)
+    const clipAction = globals.animationMixer.clipAction(
+        animationClip,
+        globals.animationGroup)
+    clipAction.setLoop(THREE.LoopOnce)
+    clipAction.play()
+  }*/
+
   const showSolutionByCheating = randomMoves => {
     const solutionMoves = randomMoves
       .map(move => move.oppositeMoveId)
@@ -274,26 +303,26 @@ const threeApp = () => {
   }
 
   const scramble = () => {
-
-    if (globals.cubeSizeChanged) {
-      globals.cubeSizeChanged = false
-      globals.puzzleGroup.clear()
-      globals.animationGroup.clear()
-      globals.controls.reset()
-      const cameraX = globals.cubeSize + 1
-      const cameraY = globals.cubeSize + 1
-      const cameraZ = globals.cubeSize * 4
-      globals.camera.position.set(cameraX, cameraY, cameraZ)
-      globals.camera.lookAt(new THREE.Vector3(0, 0, 0))
-      recreateUiPieces()
-    }
-
+    globals.cubeSizeChanged = false
     const randomMoves = U.range(NUM_RANDOM_MOVES).map(() => L.getRandomMove(globals.cubeSize))
     L.removeRedundantMoves(randomMoves)
     console.log(`random moves: ${randomMoves.map(move => move.id).join(" ")}`)
     globals.cube = L.makeMoves(randomMoves, L.getSolvedCube(globals.cubeSize))
     resetUiPieces(globals.cube)
     setTimeout(showSolutionByCheating, BEFORE_DELAY, randomMoves)
+  }
+
+  const changeCubeSize = () => {
+    globals.cubeSizeChanged = false
+    globals.puzzleGroup.clear()
+    globals.animationGroup.clear()
+    globals.controls.reset()
+    const cameraX = globals.cubeSize + 1
+    const cameraY = globals.cubeSize + 1
+    const cameraZ = globals.cubeSize * 4
+    globals.camera.position.set(cameraX, cameraY, cameraZ)
+    globals.camera.lookAt(new THREE.Vector3(0, 0, 0))
+    recreateUiPieces()
   }
 
   const init = async () => {
@@ -358,7 +387,7 @@ const threeApp = () => {
     globals.controls.maxDistance = 40.0
     globals.controls.enableDamping = true
     globals.controls.dampingFactor = 0.9
-    globals.controls.autoRotate = true
+    globals.controls.autoRotate = false
     globals.controls.autoRotateSpeed = 1.0
 
     globals.clock = new THREE.Clock()
@@ -369,7 +398,6 @@ const threeApp = () => {
     createUiPieces()
 
     animate()
-    scramble()
 
     const onDocumentKeyDownHandler = e => {
       if (e.altKey || e.ctrlKey || e.metaKey || e.ShiftKey) return
@@ -398,8 +426,17 @@ const threeApp = () => {
   }
 
   const setCubeSize = value => {
+    if (globals.scrambleEnabled) {
+      console.log("You can not change size while scrambling !")
+      return;
+    }
+
     globals.cubeSizeChanged = value !== globals.cubeSize
     globals.cubeSize = value
+    if (globals.cubeSizeChanged) {
+      changeCubeSize()
+    }
+
     emitSettingsChanged()
   }
 
@@ -424,6 +461,14 @@ const threeApp = () => {
     emitSettingsChanged()
   }
 
+  const setScrambleEnabled = value => {
+    globals.scrambleEnabled = value
+    if (globals.scrambleEnabled) {
+      scramble()
+    }
+    emitSettingsChanged()
+  }
+
   const toggleAxes = () => {
     setAxesEnabled(!globals.axesEnabled)
   }
@@ -441,6 +486,7 @@ const threeApp = () => {
     setAutoRotate,
     setAutoRotateSpeed,
     setAxesEnabled,
+    setScrambleEnabled,
     getSettings
   }
 }

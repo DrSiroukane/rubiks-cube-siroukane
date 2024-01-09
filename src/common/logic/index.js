@@ -123,6 +123,11 @@ export const getRandomMove = cubeSize => {
   return perCubeSizeData.moves[randomIndex]
 }
 
+// TODO: create cube moves related to mouse move
+// export const getBMove = () => {
+//   return lookupMoveId(3, 2)
+// }
+
 export const removeRedundantMoves = moves => {
   for (; ;) {
     let removedSomething = false

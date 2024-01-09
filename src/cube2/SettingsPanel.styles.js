@@ -24,3 +24,13 @@ export const StyledSettingsPanelBody = styled.div`
     margin-bottom: 1.5rem;
   }
 `
+
+export const StyledSettingsPanelFooter = styled.div`
+  display: flex;
+  align-self: flex-end;
+  justify-content: space-between;
+  margin-top: auto;
+  svg {
+    cursor: pointer;
+  }
+`

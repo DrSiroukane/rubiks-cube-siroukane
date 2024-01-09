@@ -1,0 +1,28 @@
+import { useState } from "react"
+import { Drawer } from "@mui/material"
+import SettingsPanel from "./SettingsPanel"
+import { StyledSettingsIcon } from "./SettingsButton.styles"
+
+const SettingsButton = ({ backToMainMenu }) => {
+
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false)
+
+  const openDrawer = () => {
+    setIsDrawerOpen(true)
+  }
+
+  const closeDrawer = () => {
+    setIsDrawerOpen(false)
+  }
+
+  return (
+    <>
+      <StyledSettingsIcon onClick={openDrawer} />
+      <Drawer anchor="left" open={isDrawerOpen} onClose={closeDrawer}>
+        <SettingsPanel onClose={closeDrawer} backToMainMenu={backToMainMenu} />
+      </Drawer>
+    </>
+  )
+}
+
+export default SettingsButton
